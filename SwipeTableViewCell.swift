@@ -25,6 +25,8 @@ public class SwipeTableViewCell: UITableViewCell {
     private var panGestureRecognizer : UIPanGestureRecognizer!
     private var leftActionViews: [SwipeTableViewCellActionView] = []
     private var rightActionViews: [SwipeTableViewCellActionView] = []
+    private var leftContainerMask: UIView!
+    private var rightContainerMask: UIView!
     public var actionWidth: CGFloat = 70 {
         didSet {
             setNeedsLayout()
@@ -71,13 +73,21 @@ public class SwipeTableViewCell: UITableViewCell {
         rightActionContainer.backgroundColor = UIColor(white: 0.96, alpha: 1.0)
         bgView.addSubview(leftActionContainer)
         bgView.addSubview(rightActionContainer)
+        
+        // action container mask
+        leftContainerMask = UIView(frame: CGRect.zero)
+        rightContainerMask = UIView(frame: CGRect.zero)
+        leftContainerMask.backgroundColor = UIColor.white
+        rightContainerMask.backgroundColor = UIColor.white
+        leftActionContainer.addSubview(leftContainerMask)
+        rightActionContainer.addSubview(rightContainerMask)
  
         // panGesture
         panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(SwipeTableViewCell.didPan(sender:)))
         addGestureRecognizer(panGestureRecognizer)
         
         // contentView
-        contentView.backgroundColor = UIColor.white
+        contentView.backgroundColor = UIColor.green
     }
     
     public override func layoutSubviews() {
@@ -90,11 +100,21 @@ public class SwipeTableViewCell: UITableViewCell {
             let x = actionWidth * CGFloat(i) + spaceBetweenActions * CGFloat(i) + actionHorizontalSpace
             view.frame = CGRect(x: x, y: 0, width: actionWidth, height: bounds.height)
         }
+        var minX: CGFloat = 0
+        if let av = leftActionViews.last {
+            minX = bounds.width - (bounds.width - av.frame.maxX) / 2
+        }
+        leftContainerMask.frame = CGRect(x: minX, y: 0, width: bounds.width, height: bounds.height)
         
         for (i, view) in rightActionViews.enumerated() {
             let x = bounds.width - actionWidth * CGFloat(i + 1) - spaceBetweenActions * CGFloat(i) - actionHorizontalSpace
             view.frame = CGRect(x: x, y: 0, width: actionWidth, height: bounds.height)
         }
+        var maxX = bounds.maxX
+        if let av = rightActionViews.last {
+            maxX = (bounds.width - av.frame.minX) / 2
+        }
+        rightContainerMask.frame = CGRect(x: 0, y: 0, width: maxX, height: bounds.height)
     }
  
     //----------------------------------------------
@@ -113,14 +133,27 @@ public class SwipeTableViewCell: UITableViewCell {
         }
     }
     
+    private func leftSmoothRange() -> (min: CGFloat, max: CGFloat) {
+        if let av = leftActionViews.last {
+            return (min: 0, max: av.frame.maxX + 30)
+        } else {
+            return (min: 0, max: 0)
+        }
+    }
+    
+    private func rightSoothRange() -> (min: CGFloat, max: CGFloat) {
+        if let av = rightActionViews.last {
+            return (min: av.frame.minX - 30 - bounds.width, max: 0)
+        } else {
+            return (min: 0, max: 0)
+        }
+    }
+    
     //----------------------------------------------
     // MARK: User Interactions
     //----------------------------------------------
     @objc private func didPan(sender: UIPanGestureRecognizer) {
         let translation = sender.translation(in: self)
-        var newFrame = contentView.frame
-        newFrame.origin.x += translation.x
-        contentView.frame = newFrame
         sender.setTranslation(CGPoint(x:0, y:0), in: self)
         if actionMode == .none {
             if translation.x > 0 {
@@ -129,6 +162,27 @@ public class SwipeTableViewCell: UITableViewCell {
                 actionMode = .right
             }
         }
+        
+        var factor: CGFloat = 1
+        var newFrame = contentView.frame
+//        switch actionMode {
+//        case .left:
+//            let range = leftSmoothRange()
+//            if newFrame.minX > range.min && newFrame.minX < range.max {
+//                factor = 1
+//            }
+//        case .right:
+//            let range = rightSoothRange()
+//            if newFrame.minX > range.min && newFrame.minX < range.max {
+//                factor = 1
+//            }
+//        default:
+//            break
+//        }
+        newFrame.origin.x += translation.x * factor
+        contentView.frame = newFrame
+
+        
         if sender.state == .ended || sender.state == .cancelled {
             animateContentViewToX(0, initialVX: sender.velocity(in: self).x)
             actionMode = .none
