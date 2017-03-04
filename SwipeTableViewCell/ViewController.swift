@@ -36,9 +36,15 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! SwipeTableViewCell
-        let leftAction = SwipeTableViewCellAction(image: UIImage(named: "Bookmark")!, title: "Bookmark")
-        let rightAction1 = SwipeTableViewCellAction(image: UIImage(named: "Delete")!, title: "Delete")
-        let rightAction2 = SwipeTableViewCellAction(image: UIImage(named: "False Alarm")!, title: "False Alarm")
+        let leftAction = SwipeTableViewCellAction(image: UIImage(named: "Bookmark")!, title: "Bookmark") {
+            (cell) in
+        }
+        let rightAction1 = SwipeTableViewCellAction(image: UIImage(named: "Delete")!, title: "Delete") {
+            (cell) in
+        }
+        let rightAction2 = SwipeTableViewCellAction(image: UIImage(named: "False Alarm")!, title: "False Alarm") {
+            (cell) in
+        }
         cell.configure(leftActions: [leftAction], rightActions: [rightAction1, rightAction2])
         return cell
     }

@@ -10,7 +10,18 @@ import UIKit
 
 public class SwipeTableViewCell: UITableViewCell {
     
+    private enum ActionMode {
+        case left, right, none
+    }
+    
+    private var actionMode: ActionMode = .none {
+        didSet {
+            updateActionContainers()
+        }
+    }
     private var bgView : UIView!
+    private var leftActionContainer: UIView!
+    private var rightActionContainer: UIView!
     private var panGestureRecognizer : UIPanGestureRecognizer!
     private var leftActionViews: [SwipeTableViewCellActionView] = []
     private var rightActionViews: [SwipeTableViewCellActionView] = []
@@ -45,13 +56,21 @@ public class SwipeTableViewCell: UITableViewCell {
     
     private func commonInit() {
         prepare()
+        updateActionContainers()
     }
     
     private func prepare() {
         // bgView
         bgView = UIView(frame: CGRect.zero)
         backgroundView = bgView
-        bgView.backgroundColor = UIColor(white: 0.96, alpha: 1.0)
+        
+        // action container
+        leftActionContainer =  UIView(frame: CGRect.zero)
+        rightActionContainer = UIView(frame: CGRect.zero)
+        leftActionContainer.backgroundColor = UIColor(white: 0.96, alpha: 1.0)
+        rightActionContainer.backgroundColor = UIColor(white: 0.96, alpha: 1.0)
+        bgView.addSubview(leftActionContainer)
+        bgView.addSubview(rightActionContainer)
  
         // panGesture
         panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(SwipeTableViewCell.didPan(sender:)))
@@ -64,6 +83,8 @@ public class SwipeTableViewCell: UITableViewCell {
     public override func layoutSubviews() {
         super.layoutSubviews()
         bgView.frame = bounds
+        leftActionContainer.frame = bounds
+        rightActionContainer.frame = bounds
         
         for (i, view) in leftActionViews.enumerated() {
             let x = actionWidth * CGFloat(i) + spaceBetweenActions * CGFloat(i) + actionHorizontalSpace
@@ -73,6 +94,22 @@ public class SwipeTableViewCell: UITableViewCell {
         for (i, view) in rightActionViews.enumerated() {
             let x = bounds.width - actionWidth * CGFloat(i + 1) - spaceBetweenActions * CGFloat(i) - actionHorizontalSpace
             view.frame = CGRect(x: x, y: 0, width: actionWidth, height: bounds.height)
+        }
+    }
+ 
+    //----------------------------------------------
+    // MARK: UI
+    //----------------------------------------------
+    private func updateActionContainers() {
+        switch actionMode {
+        case .left:
+            leftActionContainer.isHidden = false
+            rightActionContainer.isHidden = true
+        case .right:
+            leftActionContainer.isHidden = true
+            rightActionContainer.isHidden = false
+        default:
+            break
         }
     }
     
@@ -85,9 +122,16 @@ public class SwipeTableViewCell: UITableViewCell {
         newFrame.origin.x += translation.x
         contentView.frame = newFrame
         sender.setTranslation(CGPoint(x:0, y:0), in: self)
-        
+        if actionMode == .none {
+            if translation.x > 0 {
+                actionMode = .left
+            } else if translation.x < 0 {
+                actionMode = .right
+            }
+        }
         if sender.state == .ended || sender.state == .cancelled {
             animateContentViewToX(0, initialVX: sender.velocity(in: self).x)
+            actionMode = .none
         }
     }
     
@@ -118,29 +162,59 @@ public class SwipeTableViewCell: UITableViewCell {
     //----------------------------------------------
     // MARK: Configuration
     //----------------------------------------------
-    public func removeAllActions() {
-        for view in leftActionViews {
-            view.removeFromSuperview()
+    public func configure(leftActions: [SwipeTableViewCellAction]?, rightActions: [SwipeTableViewCellAction]?) {
+        
+        if let leftActions = leftActions {
+            prepareLeftActionViews(num: leftActions.count)
+            for (i, action) in leftActions.enumerated() {
+                leftActionViews[i].configure(image: action.image, title: action.title, handler: {
+                    [weak self] in
+                    if let sself = self {
+                        action.handler?(sself)
+                    }
+                })
+            }
+        } else {
+            prepareLeftActionViews(num: 0)
         }
-        for view in rightActionViews {
-            view.removeFromSuperview()
+        if let rightActions = rightActions {
+            prepareRightActionViews(num: rightActions.count)
+            for (i, action) in rightActions.enumerated() {
+                rightActionViews[i].configure(image: action.image, title: action.title, handler: {
+                    [weak self] in
+                    if let sself = self {
+                        action.handler?(sself)
+                    }
+                })
+            }
+        } else {
+            prepareRightActionViews(num: 0)
         }
-        leftActionViews = []
-        rightActionViews = []
     }
     
-    public func configure(leftActions: [SwipeTableViewCellAction]?, rightActions: [SwipeTableViewCellAction]?) {
-        if let leftActions = leftActions {
-            for action in leftActions {
-                let view = SwipeTableViewCellActionView.viewWithAction(action)
-                backgroundView?.addSubview(view)
+    private func prepareLeftActionViews(num: Int) {
+        if leftActionViews.count == num {
+            return
+        }
+        if leftActionViews.count < num {
+            let toCreate = num - leftActionViews.count
+            for _ in 0..<toCreate {
+                let view = SwipeTableViewCellActionView(frame: CGRect.zero)
+                leftActionContainer.addSubview(view)
                 leftActionViews.append(view)
             }
         }
-        if let rightActions = rightActions {
-            for action in rightActions {
-                let view = SwipeTableViewCellActionView.viewWithAction(action)
-                backgroundView?.addSubview(view)
+    }
+    
+    private func prepareRightActionViews(num: Int) {
+        if rightActionViews.count == num {
+            return
+        }
+        if rightActionViews.count < num {
+            let toCreate = num - rightActionViews.count
+            for _ in 0..<toCreate {
+                let view = SwipeTableViewCellActionView(frame: CGRect.zero)
+                rightActionContainer.addSubview(view)
                 rightActionViews.append(view)
             }
         }

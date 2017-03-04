@@ -10,51 +10,33 @@ import UIKit
 
 public class SwipeTableViewCellActionView: UIView {
     
-    private(set) public var action: SwipeTableViewCellAction!
-    private var didPrepare = false
     private(set) var imageView: UIImageView!
     private(set) var label: UILabel!
     private(set) var contentView: UIView!
-    
-    //----------------------------------------------
-    // MARK: Factories
-    //----------------------------------------------
-    class func viewWithAction(_ action: SwipeTableViewCellAction) -> SwipeTableViewCellActionView {
-        let view = SwipeTableViewCellActionView(frame: CGRect.zero)
-        view.action = action
-        return view
-    }
+    private(set) var handler: (() -> ())?
     
     //----------------------------------------------
     // MARK: Life Cycle
     //----------------------------------------------
-    private override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
+        commonInit()
     }
     
     public required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+        commonInit()
     }
     
-    public override func willMove(toSuperview newSuperview: UIView?) {
-        super.willMove(toSuperview: newSuperview)
-        if !didPrepare {
-            didPrepare = true
-            prepare()
-        }
-    }
-    
-    private func prepare() {
+    private func commonInit() {
         contentView = UIView(frame: CGRect.zero)
         addSubview(contentView)
 
         imageView = UIImageView(frame: CGRect.zero)
         imageView.contentMode = .scaleAspectFit
-        imageView.image = action.image
         contentView.addSubview(imageView)
 
         label = UILabel(frame: CGRect.zero)
-        label.text = action.title
         label.textAlignment = .center
         label.minimumScaleFactor = 0.5
         label.numberOfLines = 2
@@ -63,7 +45,6 @@ public class SwipeTableViewCellActionView: UIView {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         imageView.translatesAutoresizingMaskIntoConstraints = false
         label.translatesAutoresizingMaskIntoConstraints = false
-        
  
         contentView.centerXAnchor.constraint(equalTo: centerXAnchor, constant: 0).isActive = true
         contentView.rightAnchor.constraint(lessThanOrEqualTo: rightAnchor, constant: -10).isActive = true
@@ -76,5 +57,13 @@ public class SwipeTableViewCellActionView: UIView {
         label.leftAnchor.constraint(equalTo: contentView.leftAnchor).isActive = true
         label.rightAnchor.constraint(equalTo: contentView.rightAnchor).isActive = true
         label.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
+    }
+    
+    //----------------------------------------------
+    // MARK: Configuration
+    //----------------------------------------------
+    public func configure(image: UIImage?, title: String?, handler:(()->())?) {
+        imageView.image = image
+        label.text = title
     }
 }
