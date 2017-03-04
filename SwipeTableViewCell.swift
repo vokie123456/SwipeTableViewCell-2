@@ -12,6 +12,23 @@ public class SwipeTableViewCell: UITableViewCell {
     
     private var bgView : UIView!
     private var panGestureRecognizer : UIPanGestureRecognizer!
+    private var leftActionViews: [SwipeTableViewCellActionView] = []
+    private var rightActionViews: [SwipeTableViewCellActionView] = []
+    public var actionWidth: CGFloat = 70 {
+        didSet {
+            setNeedsLayout()
+        }
+    }
+    public var spaceBetweenActions: CGFloat = 2 {
+        didSet {
+            setNeedsLayout()
+        }
+    }
+    public var actionHorizontalSpace: CGFloat = 20 {
+        didSet {
+            setNeedsLayout()
+        }
+    }
     
     //----------------------------------------------
     // MARK: Life Cycle
@@ -34,7 +51,7 @@ public class SwipeTableViewCell: UITableViewCell {
         // bgView
         bgView = UIView(frame: CGRect.zero)
         backgroundView = bgView
-        bgView.backgroundColor = UIColor.green
+        bgView.backgroundColor = UIColor(white: 0.96, alpha: 1.0)
  
         // panGesture
         panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(SwipeTableViewCell.didPan(sender:)))
@@ -47,8 +64,17 @@ public class SwipeTableViewCell: UITableViewCell {
     public override func layoutSubviews() {
         super.layoutSubviews()
         bgView.frame = bounds
+        
+        for (i, view) in leftActionViews.enumerated() {
+            let x = actionWidth * CGFloat(i) + spaceBetweenActions * CGFloat(i) + actionHorizontalSpace
+            view.frame = CGRect(x: x, y: 0, width: actionWidth, height: bounds.height)
+        }
+        
+        for (i, view) in rightActionViews.enumerated() {
+            let x = bounds.width - actionWidth * CGFloat(i + 1) - spaceBetweenActions * CGFloat(i) - actionHorizontalSpace
+            view.frame = CGRect(x: x, y: 0, width: actionWidth, height: bounds.height)
+        }
     }
-    
     
     //----------------------------------------------
     // MARK: User Interactions
@@ -86,6 +112,37 @@ public class SwipeTableViewCell: UITableViewCell {
             self?.contentView.frame = frame
         }) { (flag) in
         
+        }
+    }
+    
+    //----------------------------------------------
+    // MARK: Configuration
+    //----------------------------------------------
+    public func removeAllActions() {
+        for view in leftActionViews {
+            view.removeFromSuperview()
+        }
+        for view in rightActionViews {
+            view.removeFromSuperview()
+        }
+        leftActionViews = []
+        rightActionViews = []
+    }
+    
+    public func configure(leftActions: [SwipeTableViewCellAction]?, rightActions: [SwipeTableViewCellAction]?) {
+        if let leftActions = leftActions {
+            for action in leftActions {
+                let view = SwipeTableViewCellActionView.viewWithAction(action)
+                backgroundView?.addSubview(view)
+                leftActionViews.append(view)
+            }
+        }
+        if let rightActions = rightActions {
+            for action in rightActions {
+                let view = SwipeTableViewCellActionView.viewWithAction(action)
+                backgroundView?.addSubview(view)
+                rightActionViews.append(view)
+            }
         }
     }
 }

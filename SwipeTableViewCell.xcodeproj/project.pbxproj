@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8B3BB4A01E6A296300659C91 /* SwipeTableViewCellActionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3BB49F1E6A296300659C91 /* SwipeTableViewCellActionView.swift */; };
+		8B3BB4A21E6A299A00659C91 /* SwipeTableViewCellAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3BB4A11E6A299A00659C91 /* SwipeTableViewCellAction.swift */; };
 		8B4C05561E6A05640002E75F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B4C05551E6A05640002E75F /* AppDelegate.swift */; };
 		8B4C05581E6A05640002E75F /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B4C05571E6A05640002E75F /* ViewController.swift */; };
 		8B4C055B1E6A05640002E75F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8B4C05591E6A05640002E75F /* Main.storyboard */; };
@@ -16,6 +18,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		8B3BB49F1E6A296300659C91 /* SwipeTableViewCellActionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwipeTableViewCellActionView.swift; sourceTree = "<group>"; };
+		8B3BB4A11E6A299A00659C91 /* SwipeTableViewCellAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwipeTableViewCellAction.swift; sourceTree = "<group>"; };
 		8B4C05521E6A05640002E75F /* SwipeTableViewCell.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwipeTableViewCell.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B4C05551E6A05640002E75F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8B4C05571E6A05640002E75F /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -41,6 +45,8 @@
 			isa = PBXGroup;
 			children = (
 				8B4C05691E6A05850002E75F /* SwipeTableViewCell.swift */,
+				8B3BB49F1E6A296300659C91 /* SwipeTableViewCellActionView.swift */,
+				8B3BB4A11E6A299A00659C91 /* SwipeTableViewCellAction.swift */,
 				8B4C05541E6A05640002E75F /* SwipeTableViewCell */,
 				8B4C05531E6A05640002E75F /* Products */,
 			);
@@ -141,6 +147,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				8B4C05581E6A05640002E75F /* ViewController.swift in Sources */,
+				8B3BB4A01E6A296300659C91 /* SwipeTableViewCellActionView.swift in Sources */,
+				8B3BB4A21E6A299A00659C91 /* SwipeTableViewCellAction.swift in Sources */,
 				8B4C056A1E6A05850002E75F /* SwipeTableViewCell.swift in Sources */,
 				8B4C05561E6A05640002E75F /* AppDelegate.swift in Sources */,
 			);
@@ -308,6 +316,7 @@
 				8B4C05661E6A05640002E75F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
