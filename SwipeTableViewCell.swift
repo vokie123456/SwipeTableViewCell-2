@@ -85,6 +85,7 @@ public class SwipeTableViewCell: UITableViewCell {
         // panGesture
         panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(SwipeTableViewCell.didPan(sender:)))
         addGestureRecognizer(panGestureRecognizer)
+        panGestureRecognizer.delegate = self
         
         // contentView
         contentView.backgroundColor = UIColor.green
@@ -116,6 +117,23 @@ public class SwipeTableViewCell: UITableViewCell {
         }
         rightContainerMask.frame = CGRect(x: 0, y: 0, width: maxX, height: bounds.height)
     }
+    
+    public override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if gestureRecognizer === panGestureRecognizer {
+            let velocity = panGestureRecognizer.velocity(in: self)
+            if abs(velocity.y) > abs(velocity.x) {
+                return false
+            }
+            return true 
+        } else {
+            return super.gestureRecognizerShouldBegin(gestureRecognizer)
+        }
+    }
+    
+    public override func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return false
+    }
+    
  
     //----------------------------------------------
     // MARK: UI
@@ -135,7 +153,7 @@ public class SwipeTableViewCell: UITableViewCell {
     
     private func leftSmoothRange() -> (min: CGFloat, max: CGFloat) {
         if let av = leftActionViews.last {
-            return (min: 0, max: av.frame.maxX + 30)
+            return (min: 0, max: av.frame.maxX + 12)
         } else {
             return (min: 0, max: 0)
         }
@@ -143,7 +161,7 @@ public class SwipeTableViewCell: UITableViewCell {
     
     private func rightSoothRange() -> (min: CGFloat, max: CGFloat) {
         if let av = rightActionViews.last {
-            return (min: av.frame.minX - 30 - bounds.width, max: 0)
+            return (min: av.frame.minX - 12 - bounds.width, max: 0)
         } else {
             return (min: 0, max: 0)
         }
@@ -163,22 +181,25 @@ public class SwipeTableViewCell: UITableViewCell {
             }
         }
         
-        var factor: CGFloat = 1
+        let currentFrame = contentView.frame
         var newFrame = contentView.frame
-//        switch actionMode {
-//        case .left:
-//            let range = leftSmoothRange()
-//            if newFrame.minX > range.min && newFrame.minX < range.max {
-//                factor = 1
-//            }
-//        case .right:
-//            let range = rightSoothRange()
-//            if newFrame.minX > range.min && newFrame.minX < range.max {
-//                factor = 1
-//            }
-//        default:
-//            break
-//        }
+        var factor: CGFloat = 1
+        var range : (min: CGFloat, max: CGFloat)? = nil
+        switch actionMode {
+        case .left:
+            range = leftSmoothRange()
+        case .right:
+            range = rightSoothRange()
+        default:
+            break
+        }
+        if let range = range {
+            if currentFrame.minX > range.max {
+                factor = min(4 / (currentFrame.minX - range.max), 1)
+            } else if currentFrame.minX < range.min {
+                factor = min(4 / (range.min - currentFrame.minX), 1)
+            }
+        }
         newFrame.origin.x += translation.x * factor
         contentView.frame = newFrame
 
@@ -199,7 +220,7 @@ public class SwipeTableViewCell: UITableViewCell {
         }
         let dx = x - x0
         let v : CGFloat = initialVX / dx
-        let duration: TimeInterval = 0.8
+        let duration: TimeInterval = 0.6
         let damping: CGFloat = 0.98
         UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: damping, initialSpringVelocity: v, options: [], animations: {
             [weak self] in
