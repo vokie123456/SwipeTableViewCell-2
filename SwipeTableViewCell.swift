@@ -42,6 +42,13 @@ public class SwipeTableViewCell: UITableViewCell {
             setNeedsLayout()
         }
     }
+    public var openMargin: CGFloat = 10
+    public var flyMargin: CGFloat = 20
+    private var springMargin: CGFloat {
+        get {
+            return flyMargin
+        }
+    }
     
     //----------------------------------------------
     // MARK: Life Cycle
@@ -153,7 +160,7 @@ public class SwipeTableViewCell: UITableViewCell {
     
     private func leftSmoothRange() -> (min: CGFloat, max: CGFloat) {
         if let av = leftActionViews.last {
-            return (min: 0, max: av.frame.maxX + 12)
+            return (min: 0, max: av.frame.maxX + springMargin)
         } else {
             return (min: 0, max: 0)
         }
@@ -161,7 +168,7 @@ public class SwipeTableViewCell: UITableViewCell {
     
     private func rightSoothRange() -> (min: CGFloat, max: CGFloat) {
         if let av = rightActionViews.last {
-            return (min: av.frame.minX - 12 - bounds.width, max: 0)
+            return (min: av.frame.minX - springMargin - bounds.width, max: 0)
         } else {
             return (min: 0, max: 0)
         }
@@ -194,10 +201,10 @@ public class SwipeTableViewCell: UITableViewCell {
             break
         }
         if let range = range {
-            if currentFrame.minX > range.max {
-                factor = min(4 / (currentFrame.minX - range.max), 1)
-            } else if currentFrame.minX < range.min {
-                factor = min(4 / (range.min - currentFrame.minX), 1)
+            if currentFrame.minX > range.max && translation.x > 0 {
+                factor = min(5 / (currentFrame.minX - range.max), 1)
+            } else if currentFrame.minX < range.min && translation.x < 0 {
+                factor = min(5 / (range.min - currentFrame.minX), 1)
             }
         }
         newFrame.origin.x += translation.x * factor
