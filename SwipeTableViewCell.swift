@@ -10,11 +10,15 @@ import UIKit
 
 public class SwipeTableViewCell: UITableViewCell {
     
-    private enum ActionMode {
+    private enum SwipeMode {
         case left, right, none
     }
     
-    private var actionMode: ActionMode = .none
+    private enum OpenMode {
+        case left, right, none
+    }
+    
+    // Views
     private var bgView : UIView!
     private var leftActionContainer: UIView!
     private var rightActionContainer: UIView!
@@ -23,6 +27,12 @@ public class SwipeTableViewCell: UITableViewCell {
     private var rightActionViews: [SwipeTableViewCellActionView] = []
     private var leftContainerMask: UIView!
     private var rightContainerMask: UIView!
+    
+    // States
+    private var swipeMode: SwipeMode = .none
+    private var openMode: OpenMode = .none
+
+    // Layouts
     public var actionWidth: CGFloat = 70 {
         didSet {
             setNeedsLayout()
@@ -38,7 +48,7 @@ public class SwipeTableViewCell: UITableViewCell {
             setNeedsLayout()
         }
     }
-    public var openMargin: CGFloat = 10
+    public var openMargin: CGFloat = 20
     public var flyMargin: CGFloat = 40
     private var springMargin: CGFloat {
         get {
@@ -47,7 +57,7 @@ public class SwipeTableViewCell: UITableViewCell {
     }
     
     //----------------------------------------------
-    // MARK: Life Cycle
+    // MARK - Life Cycle
     //----------------------------------------------
     required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
@@ -136,9 +146,8 @@ public class SwipeTableViewCell: UITableViewCell {
         return false
     }
     
- 
     //----------------------------------------------
-    // MARK: UI
+    // MARK - UI
     //----------------------------------------------
     private func leftSmoothRange() -> (min: CGFloat, max: CGFloat) {
         if let av = leftActionViews.last {
@@ -157,16 +166,30 @@ public class SwipeTableViewCell: UITableViewCell {
     }
     
     //----------------------------------------------
-    // MARK: User Interactions
+    // MARK - User Interactions
     //----------------------------------------------
     @objc private func didPan(sender: UIPanGestureRecognizer) {
         let translation = sender.translation(in: self)
+        let newFrame = calculateSwipeDestinationFrame(translation: translation)
+        contentView.frame = newFrame
+        
+        if sender.state == .ended || sender.state == .cancelled {
+            animateContentViewToX(0, initialVX: sender.velocity(in: self).x)
+            swipeMode = .none
+        }
+        
         sender.setTranslation(CGPoint(x:0, y:0), in: self)
-        if actionMode == .none {
+
+        updateActionContrainers(contentViewFrame: newFrame)
+        updateActionViewScales(contentViewFrame: newFrame, animated: true)
+    }
+    
+    private func calculateSwipeDestinationFrame(translation: CGPoint) -> CGRect {
+        if swipeMode == .none {
             if translation.x > 0 {
-                actionMode = .left
+                swipeMode = .left
             } else if translation.x < 0 {
-                actionMode = .right
+                swipeMode = .right
             }
         }
         
@@ -174,7 +197,7 @@ public class SwipeTableViewCell: UITableViewCell {
         var newFrame = contentView.frame
         var factor: CGFloat = 1
         var range : (min: CGFloat, max: CGFloat)? = nil
-        switch actionMode {
+        switch swipeMode {
         case .left:
             range = leftSmoothRange()
         case .right:
@@ -190,34 +213,40 @@ public class SwipeTableViewCell: UITableViewCell {
             }
         }
         newFrame.origin.x += translation.x * factor
-        contentView.frame = newFrame
-        
-        if sender.state == .ended || sender.state == .cancelled {
-            animateContentViewToX(0, initialVX: sender.velocity(in: self).x)
-            actionMode = .none
-        }
-        
-        switch actionMode {
+        return newFrame
+    }
+    
+    private func updateActionContrainers(contentViewFrame frame: CGRect) {
+        switch swipeMode {
         case .left:
             leftActionContainer.isHidden = false
             rightActionContainer.isHidden = true
-            leftContainerMask.isHidden = newFrame.minX > 0
-            for v in leftActionViews {
-                if newFrame.minX > v.frame.midX {
-                    v.updateToMaxScale(animated: true)
-                } else {
-                    v.updateToMinScale(animated: true)
-                }
-            }
+            leftContainerMask.isHidden = frame.minX > 0
         case .right:
             leftActionContainer.isHidden = true
             rightActionContainer.isHidden = false
-            rightContainerMask.isHidden = newFrame.minX < 0
-            for v in rightActionViews {
-                if newFrame.maxX < v.frame.midX {
-                    v.updateToMaxScale(animated: true)
+            rightContainerMask.isHidden = frame.minX < 0
+        default:
+            break
+        }
+    }
+    
+    private func updateActionViewScales(contentViewFrame frame: CGRect, animated: Bool) {
+        switch swipeMode {
+        case .left:
+            for v in leftActionViews {
+                if frame.minX > v.frame.midX {
+                    v.updateToMaxScale(animated: animated)
                 } else {
-                    v.updateToMinScale(animated: true)
+                    v.updateToMinScale(animated: animated)
+                }
+            }
+        case .right:
+            for v in rightActionViews {
+                if frame.maxX < v.frame.midX {
+                    v.updateToMaxScale(animated: animated)
+                } else {
+                    v.updateToMinScale(animated: animated)
                 }
             }
         default:
@@ -226,7 +255,7 @@ public class SwipeTableViewCell: UITableViewCell {
     }
     
     //----------------------------------------------
-    // MARK: Animatation
+    // MARK - Animatation
     //----------------------------------------------
     private func animateContentViewToX(_ x: CGFloat, initialVX: CGFloat) {
         let x0 =  contentView.frame.origin.x
@@ -235,9 +264,9 @@ public class SwipeTableViewCell: UITableViewCell {
         }
         let dx = x - x0
         let v : CGFloat = initialVX / dx
-        let duration: TimeInterval = 0.6
+        let duration: TimeInterval = 0.8
         let damping: CGFloat = 0.98
-        UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: damping, initialSpringVelocity: v, options: [], animations: {
+        UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: damping, initialSpringVelocity: v, options: [.allowUserInteraction], animations: {
             [weak self] in
             guard var frame = self?.contentView.frame else {
                 return
@@ -250,7 +279,7 @@ public class SwipeTableViewCell: UITableViewCell {
     }
     
     //----------------------------------------------
-    // MARK: Configuration
+    // MARK - Configuration
     //----------------------------------------------
     public func configure(leftActions: [SwipeTableViewCellAction]?, rightActions: [SwipeTableViewCellAction]?) {
         
