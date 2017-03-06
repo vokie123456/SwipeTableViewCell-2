@@ -14,9 +14,9 @@ public class SwipeTableViewCellActionView: UIView {
     private(set) var label: UILabel!
     private(set) var contentView: UIView!
     private(set) var handler: (() -> ())?
-    
+    private(set) var currentScale: CGFloat = 1
     //----------------------------------------------
-    // MARK: Life Cycle
+    // MARK: - Life Cycle
     //----------------------------------------------
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -40,7 +40,7 @@ public class SwipeTableViewCellActionView: UIView {
         label.textAlignment = .center
         label.minimumScaleFactor = 0.5
         label.numberOfLines = 2
-        addSubview(label)
+        contentView.addSubview(label)
         
         contentView.translatesAutoresizingMaskIntoConstraints = false
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -60,10 +60,27 @@ public class SwipeTableViewCellActionView: UIView {
     }
     
     //----------------------------------------------
-    // MARK: Configuration
+    // MARK: - Configuration
     //----------------------------------------------
     public func configure(image: UIImage?, title: String?, handler:(()->())?) {
         imageView.image = image
         label.text = title
+    }
+    
+    // ======================================================= //
+    // MARK: - UI
+    // ======================================================= //
+    public func updateContentScale(_ scale: CGFloat, animated: Bool) {
+        if currentScale == scale {
+            return
+        }
+        currentScale = scale
+        if animated {
+            UIView.animate(withDuration: 0.3, delay: 0.0, usingSpringWithDamping: 0.9, initialSpringVelocity: 1.0, options: [], animations: { 
+                self.contentView.transform = CGAffineTransform(scaleX: scale, y: scale)
+            }, completion: nil)
+        } else {
+            self.contentView.transform = CGAffineTransform(scaleX: scale, y: scale)
+        }
     }
 }

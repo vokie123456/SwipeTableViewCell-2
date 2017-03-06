@@ -200,7 +200,6 @@ public class SwipeTableViewCell: UITableViewCell {
         }
         newFrame.origin.x += translation.x * factor
         contentView.frame = newFrame
-
         
         if sender.state == .ended || sender.state == .cancelled {
             animateContentViewToX(0, initialVX: sender.velocity(in: self).x)
@@ -212,10 +211,24 @@ public class SwipeTableViewCell: UITableViewCell {
             leftActionContainer.isHidden = false
             rightActionContainer.isHidden = true
             leftContainerMask.isHidden = newFrame.minX > 0
+            for v in leftActionViews {
+                if newFrame.minX > v.frame.midX {
+                    v.updateContentScale(1.0, animated: true)
+                } else {
+                    v.updateContentScale(0.8, animated: true)
+                }
+            }
         case .right:
             leftActionContainer.isHidden = true
             rightActionContainer.isHidden = false
             rightContainerMask.isHidden = newFrame.minX < 0
+            for v in rightActionViews {
+                if newFrame.maxX < v.frame.midX {
+                    v.updateContentScale(1.0, animated: true)
+                } else {
+                    v.updateContentScale(0.8, animated: true)
+                }
+            }
         default:
             break
         }
