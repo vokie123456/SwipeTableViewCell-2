@@ -42,7 +42,7 @@ public class SwipeTableViewCell: UITableViewCell {
     public var flyMargin: CGFloat = 40
     private var springMargin: CGFloat {
         get {
-            return flyMargin
+            return flyMargin + 40
         }
     }
     
@@ -213,9 +213,9 @@ public class SwipeTableViewCell: UITableViewCell {
             leftContainerMask.isHidden = newFrame.minX > 0
             for v in leftActionViews {
                 if newFrame.minX > v.frame.midX {
-                    v.updateContentScale(1.0, animated: true)
+                    v.updateToMaxScale(animated: true)
                 } else {
-                    v.updateContentScale(0.8, animated: true)
+                    v.updateToMinScale(animated: true)
                 }
             }
         case .right:
@@ -224,9 +224,9 @@ public class SwipeTableViewCell: UITableViewCell {
             rightContainerMask.isHidden = newFrame.minX < 0
             for v in rightActionViews {
                 if newFrame.maxX < v.frame.midX {
-                    v.updateContentScale(1.0, animated: true)
+                    v.updateToMaxScale(animated: true)
                 } else {
-                    v.updateContentScale(0.8, animated: true)
+                    v.updateToMinScale(animated: true)
                 }
             }
         default:

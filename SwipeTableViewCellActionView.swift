@@ -15,6 +15,8 @@ public class SwipeTableViewCellActionView: UIView {
     private(set) var contentView: UIView!
     private(set) var handler: (() -> ())?
     private(set) var currentScale: CGFloat = 1
+    public var minScale: CGFloat = 0.8
+    public var maxScale: CGFloat = 1
     //----------------------------------------------
     // MARK: - Life Cycle
     //----------------------------------------------
@@ -82,5 +84,13 @@ public class SwipeTableViewCellActionView: UIView {
         } else {
             self.contentView.transform = CGAffineTransform(scaleX: scale, y: scale)
         }
+    }
+    
+    public func updateToMinScale(animated: Bool) {
+        updateContentScale(minScale, animated: animated)
+    }
+    
+    public func updateToMaxScale(animated: Bool) {
+        updateContentScale(maxScale, animated: animated)
     }
 }
