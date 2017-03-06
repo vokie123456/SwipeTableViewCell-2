@@ -48,6 +48,8 @@ public class SwipeTableViewCell: UITableViewCell {
             setNeedsLayout()
         }
     }
+    public var openTriggerVX: CGFloat = 700
+    public var closeTriggerVC: CGFloat = 100
     public var openMargin: CGFloat = 20
     public var flyMargin: CGFloat = 40
     private var springMargin: CGFloat {
@@ -70,6 +72,7 @@ public class SwipeTableViewCell: UITableViewCell {
     }
     
     private func commonInit() {
+        selectionStyle = .none
         prepare()
     }
     
@@ -169,12 +172,25 @@ public class SwipeTableViewCell: UITableViewCell {
     // MARK - User Interactions
     //----------------------------------------------
     @objc private func didPan(sender: UIPanGestureRecognizer) {
+        
         let translation = sender.translation(in: self)
-        let newFrame = calculateSwipeDestinationFrame(translation: translation)
+        let v = sender.velocity(in: self)
+        
+        
+        let currentFrame = contentView.frame
+        let newFrame = calculateSwipeDestinationFrame(currentFrame: currentFrame, translation: translation)
         contentView.frame = newFrame
         
+        if swipeMode == .none {
+            if newFrame.minX > 0 {
+                swipeMode = .left
+            } else if newFrame.minX < 0 {
+                swipeMode = .right
+            }
+        }
+        
         if sender.state == .ended || sender.state == .cancelled {
-            animateContentViewToX(0, initialVX: sender.velocity(in: self).x)
+            updateOpenModeAfterSwipe(oldFrame: currentFrame, newFrame: newFrame, velocity: v) {}
             swipeMode = .none
         }
         
@@ -184,16 +200,61 @@ public class SwipeTableViewCell: UITableViewCell {
         updateActionViewScales(contentViewFrame: newFrame, animated: true)
     }
     
-    private func calculateSwipeDestinationFrame(translation: CGPoint) -> CGRect {
-        if swipeMode == .none {
-            if translation.x > 0 {
-                swipeMode = .left
-            } else if translation.x < 0 {
-                swipeMode = .right
+    private func updateOpenModeAfterSwipe(oldFrame: CGRect, newFrame: CGRect, velocity: CGPoint, complete: ( () -> () )? ) {
+        let vx = velocity.x
+        switch swipeMode {
+        case .left:
+            if velocity.x > openTriggerVX {
+                updateOpenMode(.left, initialVX: vx)
+            } else if velocity.x < -closeTriggerVC {
+                updateOpenMode(.none, initialVX: vx)
+            } else if let v = leftActionViews.first {
+                if newFrame.minX > v.frame.maxX {
+                    updateOpenMode(.left, initialVX: vx)
+                } else {
+                    updateOpenMode(.none, initialVX: vx)
+                }
             }
+        case .right:
+            if velocity.x < -openTriggerVX {
+                updateOpenMode(.right, initialVX: vx)
+            } else if velocity.x > closeTriggerVC {
+                updateOpenMode(.none, initialVX: vx)
+            } else if let v = rightActionViews.first {
+                if newFrame.maxX < v.frame.minX {
+                    updateOpenMode(.right, initialVX: vx)
+                } else {
+                    updateOpenMode(.none, initialVX: vx)
+                }
+            }
+        case .none:
+            break
         }
+    }
+    
+    private func updateOpenMode(_ mode: OpenMode, initialVX vx: CGFloat, complete: ( () -> () )? = nil) {
+        switch mode {
+        case .left:
+            openContentView(openMode: .left, initialVX: vx, animated: true) {
+                complete?()
+            }
+            openMode = .left
+        case .right:
+            openContentView(openMode: .right, initialVX: vx, animated: true) {
+                complete?()
+            }
+            openMode = .right
+        case .none:
+            closeContentView(initialVX: vx, aniamted: true) {
+                complete?()
+            }
+            openMode = .none
+        }
+    }
+    
+    private func calculateSwipeDestinationFrame(currentFrame: CGRect, translation: CGPoint) -> CGRect {
         
-        let currentFrame = contentView.frame
+        
         var newFrame = contentView.frame
         var factor: CGFloat = 1
         var range : (min: CGFloat, max: CGFloat)? = nil
@@ -255,17 +316,17 @@ public class SwipeTableViewCell: UITableViewCell {
     }
     
     //----------------------------------------------
-    // MARK - Animatation
+    // MARK - ContentView Position
     //----------------------------------------------
-    private func animateContentViewToX(_ x: CGFloat, initialVX: CGFloat) {
+    private func moveContentViewToX(_ x: CGFloat, initialVX: CGFloat, animated: Bool, complete: ( () -> () )?) {
         let x0 =  contentView.frame.origin.x
         if x0 == x {
             return
         }
         let dx = x - x0
         let v : CGFloat = initialVX / dx
-        let duration: TimeInterval = 0.8
-        let damping: CGFloat = 0.98
+        let duration: TimeInterval = animated ? 0.6 : 0.0
+        let damping: CGFloat = 1.0
         UIView.animate(withDuration: duration, delay: 0, usingSpringWithDamping: damping, initialSpringVelocity: v, options: [.allowUserInteraction], animations: {
             [weak self] in
             guard var frame = self?.contentView.frame else {
@@ -274,8 +335,38 @@ public class SwipeTableViewCell: UITableViewCell {
             frame.origin.x = x
             self?.contentView.frame = frame
         }) { (flag) in
-        
+            complete?()
         }
+    }
+    
+    private func closeContentView(initialVX: CGFloat, aniamted: Bool, complete: ( () -> () )?) {
+        moveContentViewToX(0, initialVX: initialVX, animated: aniamted, complete: complete)
+        for v in leftActionViews + rightActionViews {
+            v.updateToMinScale(animated: true)
+        }
+    }
+    
+    private func openContentView(openMode: OpenMode, initialVX: CGFloat, animated: Bool, complete: ( () -> () )? ) {
+        var destX: CGFloat = 0
+        switch openMode {
+        case .left:
+            if let v = leftActionViews.last {
+                destX = v.frame.maxX + openMargin
+            }
+            for v in leftActionViews {
+                v.updateToMaxScale(animated: true)
+            }
+        case .right:
+            if let v = rightActionViews.last {
+                destX = -(bounds.width - v.frame.minX + openMargin)
+            }
+            for v in rightActionViews {
+                v.updateToMaxScale(animated: true)
+            }
+        default:
+            break
+        }
+        moveContentViewToX(destX, initialVX: initialVX, animated: animated, complete: complete)
     }
     
     //----------------------------------------------
