@@ -14,11 +14,7 @@ public class SwipeTableViewCell: UITableViewCell {
         case left, right, none
     }
     
-    private var actionMode: ActionMode = .none {
-        didSet {
-            updateActionContainers()
-        }
-    }
+    private var actionMode: ActionMode = .none
     private var bgView : UIView!
     private var leftActionContainer: UIView!
     private var rightActionContainer: UIView!
@@ -43,7 +39,7 @@ public class SwipeTableViewCell: UITableViewCell {
         }
     }
     public var openMargin: CGFloat = 10
-    public var flyMargin: CGFloat = 20
+    public var flyMargin: CGFloat = 40
     private var springMargin: CGFloat {
         get {
             return flyMargin
@@ -147,12 +143,7 @@ public class SwipeTableViewCell: UITableViewCell {
     //----------------------------------------------
     private func updateActionContainers() {
         switch actionMode {
-        case .left:
-            leftActionContainer.isHidden = false
-            rightActionContainer.isHidden = true
-        case .right:
-            leftActionContainer.isHidden = true
-            rightActionContainer.isHidden = false
+        
         default:
             break
         }
@@ -214,6 +205,19 @@ public class SwipeTableViewCell: UITableViewCell {
         if sender.state == .ended || sender.state == .cancelled {
             animateContentViewToX(0, initialVX: sender.velocity(in: self).x)
             actionMode = .none
+        }
+        
+        switch actionMode {
+        case .left:
+            leftActionContainer.isHidden = false
+            rightActionContainer.isHidden = true
+            leftContainerMask.isHidden = newFrame.minX > 0
+        case .right:
+            leftActionContainer.isHidden = true
+            rightActionContainer.isHidden = false
+            rightContainerMask.isHidden = newFrame.minX < 0
+        default:
+            break
         }
     }
     
