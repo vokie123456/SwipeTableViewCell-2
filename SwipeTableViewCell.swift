@@ -61,7 +61,6 @@ public class SwipeTableViewCell: UITableViewCell {
     
     private func commonInit() {
         prepare()
-        updateActionContainers()
     }
     
     private func prepare() {
@@ -141,14 +140,6 @@ public class SwipeTableViewCell: UITableViewCell {
     //----------------------------------------------
     // MARK: UI
     //----------------------------------------------
-    private func updateActionContainers() {
-        switch actionMode {
-        
-        default:
-            break
-        }
-    }
-    
     private func leftSmoothRange() -> (min: CGFloat, max: CGFloat) {
         if let av = leftActionViews.last {
             return (min: 0, max: av.frame.maxX + springMargin)
