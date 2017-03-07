@@ -18,6 +18,10 @@ public class SwipeTableViewCell: UITableViewCell {
         case left, right, none
     }
     
+    private enum FlyMode {
+        case left, right, none
+    }
+    
     // Views
     private var bgView : UIView!
     private var leftActionContainer: UIView!
@@ -31,6 +35,7 @@ public class SwipeTableViewCell: UITableViewCell {
     // States
     private var swipeMode: SwipeMode = .none
     private var openMode: OpenMode = .none
+    private var flyMode: FlyMode = .none
 
     // Layouts
     public var actionWidth: CGFloat = 70 {
@@ -149,24 +154,6 @@ public class SwipeTableViewCell: UITableViewCell {
         return false
     }
     
-    //----------------------------------------------
-    // MARK - UI
-    //----------------------------------------------
-    private func leftSmoothRange() -> (min: CGFloat, max: CGFloat) {
-        if let av = leftActionViews.last {
-            return (min: 0, max: av.frame.maxX + springMargin)
-        } else {
-            return (min: 0, max: 0)
-        }
-    }
-    
-    private func rightSoothRange() -> (min: CGFloat, max: CGFloat) {
-        if let av = rightActionViews.last {
-            return (min: av.frame.minX - springMargin - bounds.width, max: 0)
-        } else {
-            return (min: 0, max: 0)
-        }
-    }
     
     //----------------------------------------------
     // MARK - User Interactions
@@ -254,7 +241,6 @@ public class SwipeTableViewCell: UITableViewCell {
     
     private func calculateSwipeDestinationFrame(currentFrame: CGRect, translation: CGPoint) -> CGRect {
         
-        
         var newFrame = contentView.frame
         var factor: CGFloat = 1
         var range : (min: CGFloat, max: CGFloat)? = nil
@@ -316,7 +302,7 @@ public class SwipeTableViewCell: UITableViewCell {
     }
     
     //----------------------------------------------
-    // MARK - ContentView Position
+    // MARK - UI
     //----------------------------------------------
     private func moveContentViewToX(_ x: CGFloat, initialVX: CGFloat, animated: Bool, complete: ( () -> () )?) {
         let x0 =  contentView.frame.origin.x
@@ -367,6 +353,17 @@ public class SwipeTableViewCell: UITableViewCell {
             break
         }
         moveContentViewToX(destX, initialVX: initialVX, animated: animated, complete: complete)
+    }
+    
+    private func updateFlyModeWhileSwiping(contentViewFrame cvFrame: CGRect, swipeMode: SwipeMode) {
+//        switch swipeMode {
+//        case .left:
+//            
+//        case .right:
+//            
+//        case .none:
+//            break
+//        }
     }
     
     //----------------------------------------------
@@ -427,6 +424,25 @@ public class SwipeTableViewCell: UITableViewCell {
                 rightActionContainer.addSubview(view)
                 rightActionViews.append(view)
             }
+        }
+    }
+    
+    //----------------------------------------------
+    // MARK - UI Helpers
+    //----------------------------------------------
+    private func leftSmoothRange() -> (min: CGFloat, max: CGFloat) {
+        if let av = leftActionViews.last {
+            return (min: 0, max: av.frame.maxX + springMargin)
+        } else {
+            return (min: 0, max: 0)
+        }
+    }
+    
+    private func rightSoothRange() -> (min: CGFloat, max: CGFloat) {
+        if let av = rightActionViews.last {
+            return (min: av.frame.minX - springMargin - bounds.width, max: 0)
+        } else {
+            return (min: 0, max: 0)
         }
     }
 }
