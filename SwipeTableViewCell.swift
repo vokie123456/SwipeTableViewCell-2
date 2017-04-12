@@ -8,8 +8,14 @@
 
 import UIKit
 
+public protocol SwipeTableViewCellDelegate: class {
+    func swipteTableViewCellDidStartPanning(_ cell: SwipeTableViewCell)
+}
+
+
 public class SwipeTableViewCell: UITableViewCell {
-    
+ 
+    // Definitions
     private enum SwipeMode {
         case left, right, none
     }
@@ -22,7 +28,7 @@ public class SwipeTableViewCell: UITableViewCell {
         case left, right, none
     }
     
-    // Views
+    // Outlets
     private var bgView : UIView!
     private var leftActionContainer: UIView!
     private var rightActionContainer: UIView!
@@ -36,8 +42,11 @@ public class SwipeTableViewCell: UITableViewCell {
     private var swipeMode: SwipeMode = .none
     private var openMode: OpenMode = .none
     private var flyMode: FlyMode = .none
+    
+    // Congiturations
+    public weak var delegate: SwipeTableViewCellDelegate?
 
-    // Layouts
+    // Layouts Configurations
     public var actionWidth: CGFloat = 70 {
         didSet {
             setNeedsLayout()
@@ -64,7 +73,7 @@ public class SwipeTableViewCell: UITableViewCell {
     }
     
     //----------------------------------------------
-    // MARK - Life Cycle
+    // MARK: - Life Cycle
     //----------------------------------------------
     required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
@@ -136,8 +145,18 @@ public class SwipeTableViewCell: UITableViewCell {
             maxX = (bounds.width - av.frame.minX) / 2
         }
         rightContainerMask.frame = CGRect(x: 0, y: 0, width: maxX, height: bounds.height)
+        
+        updateOpenMode(openMode, initialVX: 0, animated: true)
     }
     
+    public override func prepareForReuse() {
+        super.prepareForReuse()
+        updateOpenMode(.none, initialVX: 0, animated: false)
+    }
+    
+    //----------------------------------------------
+    // MARK: - Gesture
+    //----------------------------------------------
     public override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         if gestureRecognizer === panGestureRecognizer {
             let velocity = panGestureRecognizer.velocity(in: self)
@@ -154,15 +173,14 @@ public class SwipeTableViewCell: UITableViewCell {
         return false
     }
     
-    
-    //----------------------------------------------
-    // MARK - User Interactions
-    //----------------------------------------------
     @objc private func didPan(sender: UIPanGestureRecognizer) {
+        
+        if sender.state == .began {
+            delegate?.swipteTableViewCellDidStartPanning(self)
+        }
         
         let translation = sender.translation(in: self)
         let v = sender.velocity(in: self)
-        
         
         let currentFrame = contentView.frame
         let newFrame = calculateSwipeDestinationFrame(currentFrame: currentFrame, translation: translation)
@@ -185,33 +203,37 @@ public class SwipeTableViewCell: UITableViewCell {
 
         updateActionContrainers(contentViewFrame: newFrame)
         updateActionViewScales(contentViewFrame: newFrame, animated: true)
+        
     }
     
+    //----------------------------------------------
+    // MARK: - Mode
+    //----------------------------------------------
     private func updateOpenModeAfterSwipe(oldFrame: CGRect, newFrame: CGRect, velocity: CGPoint, complete: ( () -> () )? ) {
         let vx = velocity.x
         switch swipeMode {
         case .left:
             if velocity.x > openTriggerVX {
-                updateOpenMode(.left, initialVX: vx)
+                updateOpenMode(.left, initialVX: vx, animated: true)
             } else if velocity.x < -closeTriggerVC {
-                updateOpenMode(.none, initialVX: vx)
+                updateOpenMode(.none, initialVX: vx, animated: true)
             } else if let v = leftActionViews.first {
                 if newFrame.minX > v.frame.maxX {
-                    updateOpenMode(.left, initialVX: vx)
+                    updateOpenMode(.left, initialVX: vx, animated: true)
                 } else {
-                    updateOpenMode(.none, initialVX: vx)
+                    updateOpenMode(.none, initialVX: vx, animated: true)
                 }
             }
         case .right:
             if velocity.x < -openTriggerVX {
-                updateOpenMode(.right, initialVX: vx)
+                updateOpenMode(.right, initialVX: vx, animated: true)
             } else if velocity.x > closeTriggerVC {
-                updateOpenMode(.none, initialVX: vx)
+                updateOpenMode(.none, initialVX: vx, animated: true)
             } else if let v = rightActionViews.first {
                 if newFrame.maxX < v.frame.minX {
-                    updateOpenMode(.right, initialVX: vx)
+                    updateOpenMode(.right, initialVX: vx, animated: true)
                 } else {
-                    updateOpenMode(.none, initialVX: vx)
+                    updateOpenMode(.none, initialVX: vx, animated: true)
                 }
             }
         case .none:
@@ -219,20 +241,20 @@ public class SwipeTableViewCell: UITableViewCell {
         }
     }
     
-    private func updateOpenMode(_ mode: OpenMode, initialVX vx: CGFloat, complete: ( () -> () )? = nil) {
+    private func updateOpenMode(_ mode: OpenMode, initialVX vx: CGFloat, animated: Bool, complete: ( () -> () )? = nil) {
         switch mode {
         case .left:
-            openContentView(openMode: .left, initialVX: vx, animated: true) {
+            openContentView(openMode: .left, initialVX: vx, animated: animated) {
                 complete?()
             }
             openMode = .left
         case .right:
-            openContentView(openMode: .right, initialVX: vx, animated: true) {
+            openContentView(openMode: .right, initialVX: vx, animated: animated) {
                 complete?()
             }
             openMode = .right
         case .none:
-            closeContentView(initialVX: vx, aniamted: true) {
+            closeContentView(initialVX: vx, aniamted: animated) {
                 complete?()
             }
             openMode = .none
@@ -302,7 +324,7 @@ public class SwipeTableViewCell: UITableViewCell {
     }
     
     //----------------------------------------------
-    // MARK - UI
+    // MARK: - UI
     //----------------------------------------------
     private func moveContentViewToX(_ x: CGFloat, initialVX: CGFloat, animated: Bool, complete: ( () -> () )?) {
         let x0 =  contentView.frame.origin.x
@@ -366,8 +388,36 @@ public class SwipeTableViewCell: UITableViewCell {
 //        }
     }
     
+    private func prepareLeftActionViews(num: Int) {
+        if leftActionViews.count == num {
+            return
+        }
+        if leftActionViews.count < num {
+            let toCreate = num - leftActionViews.count
+            for _ in 0..<toCreate {
+                let view = SwipeTableViewCellActionView(frame: CGRect.zero)
+                leftActionContainer.addSubview(view)
+                leftActionViews.append(view)
+            }
+        }
+    }
+    
+    private func prepareRightActionViews(num: Int) {
+        if rightActionViews.count == num {
+            return
+        }
+        if rightActionViews.count < num {
+            let toCreate = num - rightActionViews.count
+            for _ in 0..<toCreate {
+                let view = SwipeTableViewCellActionView(frame: CGRect.zero)
+                rightActionContainer.addSubview(view)
+                rightActionViews.append(view)
+            }
+        }
+    }
+    
     //----------------------------------------------
-    // MARK - Configuration
+    // MARK: - Actions
     //----------------------------------------------
     public func configure(leftActions: [SwipeTableViewCellAction]?, rightActions: [SwipeTableViewCellAction]?) {
         
@@ -399,36 +449,12 @@ public class SwipeTableViewCell: UITableViewCell {
         }
     }
     
-    private func prepareLeftActionViews(num: Int) {
-        if leftActionViews.count == num {
-            return
-        }
-        if leftActionViews.count < num {
-            let toCreate = num - leftActionViews.count
-            for _ in 0..<toCreate {
-                let view = SwipeTableViewCellActionView(frame: CGRect.zero)
-                leftActionContainer.addSubview(view)
-                leftActionViews.append(view)
-            }
-        }
-    }
-    
-    private func prepareRightActionViews(num: Int) {
-        if rightActionViews.count == num {
-            return
-        }
-        if rightActionViews.count < num {
-            let toCreate = num - rightActionViews.count
-            for _ in 0..<toCreate {
-                let view = SwipeTableViewCellActionView(frame: CGRect.zero)
-                rightActionContainer.addSubview(view)
-                rightActionViews.append(view)
-            }
-        }
+    public func closeActions() {
+        updateOpenMode(.none, initialVX: 0, animated: true)
     }
     
     //----------------------------------------------
-    // MARK - UI Helpers
+    // MARK: - UI Helpers
     //----------------------------------------------
     private func leftSmoothRange() -> (min: CGFloat, max: CGFloat) {
         if let av = leftActionViews.last {

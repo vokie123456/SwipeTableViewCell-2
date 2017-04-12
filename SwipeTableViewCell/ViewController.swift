@@ -38,12 +38,15 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! SwipeTableViewCell
         let leftAction = SwipeTableViewCellAction(image: UIImage(named: "Bookmark")!, title: "Bookmark") {
             (cell) in
+            print("Book mark")
         }
         let rightAction1 = SwipeTableViewCellAction(image: UIImage(named: "Delete")!, title: "Delete") {
             (cell) in
+            print("Delete")
         }
         let rightAction2 = SwipeTableViewCellAction(image: UIImage(named: "False Alarm")!, title: "False Alarm") {
             (cell) in
+            print("False Alarm")
         }
         cell.configure(leftActions: [leftAction], rightActions: [rightAction1, rightAction2])
         return cell

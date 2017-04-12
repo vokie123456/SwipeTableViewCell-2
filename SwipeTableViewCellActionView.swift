@@ -9,14 +9,21 @@
 import UIKit
 
 public class SwipeTableViewCellActionView: UIView {
+ 
+    // Outlets
+    private var imageView: UIImageView!
+    private var label: UILabel!
+    private var contentView: UIView!
+    private var tap: UITapGestureRecognizer!
     
-    private(set) var imageView: UIImageView!
-    private(set) var label: UILabel!
-    private(set) var contentView: UIView!
-    private(set) var handler: (() -> ())?
+    // State
     private(set) var currentScale: CGFloat = 1
+    
+    // Configurations
     public var minScale: CGFloat = 0.8
     public var maxScale: CGFloat = 1
+    private(set) var handler: (() -> ())?
+
     //----------------------------------------------
     // MARK: - Life Cycle
     //----------------------------------------------
@@ -59,7 +66,18 @@ public class SwipeTableViewCellActionView: UIView {
         label.leftAnchor.constraint(equalTo: contentView.leftAnchor).isActive = true
         label.rightAnchor.constraint(equalTo: contentView.rightAnchor).isActive = true
         label.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
+        
+        tap = UITapGestureRecognizer(target: self, action: #selector(SwipeTableViewCellActionView.didTap(_:)))
+        addGestureRecognizer(tap)
     }
+    
+    //----------------------------------------------
+    // MARK: - User Interactions
+    //----------------------------------------------
+    func didTap(_ sender: UITapGestureRecognizer) {
+        handler?()
+    }
+    
     
     //----------------------------------------------
     // MARK: - Configuration
@@ -67,6 +85,7 @@ public class SwipeTableViewCellActionView: UIView {
     public func configure(image: UIImage?, title: String?, handler:(()->())?) {
         imageView.image = image
         label.text = title
+        self.handler = handler
     }
     
     // ======================================================= //
