@@ -44,7 +44,7 @@ public class SwipeTableViewCell: UITableViewCell {
     private var flyMode: FlyMode = .none
     
     // Congiturations
-    public weak var delegate: SwipeTableViewCellDelegate?
+    public weak var swipeDelegate: SwipeTableViewCellDelegate?
 
     // Layouts Configurations
     public var actionWidth: CGFloat = 70 {
@@ -176,7 +176,7 @@ public class SwipeTableViewCell: UITableViewCell {
     @objc private func didPan(sender: UIPanGestureRecognizer) {
         
         if sender.state == .began {
-            delegate?.swipteTableViewCellDidStartPanning(self)
+            swipeDelegate?.swipteTableViewCellDidStartPanning(self)
         }
         
         let translation = sender.translation(in: self)
